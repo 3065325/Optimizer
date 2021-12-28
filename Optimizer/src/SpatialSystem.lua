@@ -50,16 +50,21 @@ function SpatialSystem:_clean(object)
 end
 
 function SpatialSystem:SetObjectPosition(object, worldPosition)
-    -- Clean
-    self:_clean(object)
-
-    -- Allocate
+    --Get
     local cellPosition = self:ToCellSpace(worldPosition)
-    self:_allocateCell(cellPosition)
+    if self.objectPositions:Get(object) ~= cellPosition then
+      -- Clean
+      self:_clean(object)
+
+      -- Allocate
+      self:_allocateCell(cellPosition)
+
+      --Set
+      self.cellObjects:Get(cellPosition):Add(object)
+    end
 
     -- Set
     self.objectPositions:Set(object, cellPosition)
-    self.cellObjects:Get(cellPosition):Add(object)
 end
 
 function SpatialSystem:RemoveObject(object)
@@ -85,9 +90,8 @@ function SpatialSystem:GetObjectsInRadius(worldPosition, radius)
         for y = -cellRadius, cellRadius do
             for z = -cellRadius, cellRadius do
                 for _, object in ipairs(self:GetObjectsInCell(cellPosition + Vector3.new(x, y, z))) do
-                    if (worldPosition - self.objectPositions:Get(object)).Magnitude <= radius then
-                        table.insert(objects, object)
-                    end
+                    if (worldPosition - self.objectPositions:Get(object)).Magnitude > radius then continue end
+                    table.insert(objects, object)
                 end
             end
         end
